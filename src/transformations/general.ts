@@ -148,51 +148,6 @@ export const cleanMemberExpressions = (ast: File) => {
   return ast;
 };
 
-// const removeRedudantStringVars = (ast: File) => {
-//   traverse(ast, {
-//     VariableDeclaration(path) {
-//       const { node } = path;
-//       if (
-//         node.declarations.length > 0 &&
-//         isVariableDeclarator(node.declarations[0]) &&
-//         isLiteral(node.declarations[0].init) &&
-//         isIdentifier(node.declarations[0].id)
-//       ) {
-//         const { init, id } = node.declarations[0];
-//         if (!path.scope.getBinding(id.name)?.constant) {
-//           return;
-//         }
-//         //if (path.scope.getBinding(id.name)?.constant) return;
-//         switch (init.type) {
-//           case 'StringLiteral':
-//             if (init.value.length === 0) return;
-//             path.scope
-//               .getBinding(id.name)
-//               ?.referencePaths[0].replaceWith(stringLiteral(init.value));
-//             break;
-//           case 'NumericLiteral':
-//             if (!init.value) return;
-//             path.scope
-//               .getBinding(id.name)
-//               ?.referencePaths[0].replaceWith(numericLiteral(init.value));
-//             break;
-//           // case 'BooleanLiteral':
-//           //   path.scope
-//           //     .getBinding(id.name)
-//           //     ?.referencePaths[0].replaceWith(booleanLiteral(init.value));
-//           //   break;
-//           default:
-//             //console.log(init.type);
-//             return;
-//         }
-
-//         path.remove();
-//       }
-//     },
-//   });
-//   return ast;
-// };
-
 /** @description Visits VariableDeclaration nodes and if its init node is void0, it removes this as it is the same as 'var x;' */
 export const removeRedudantVoidVar = (ast: File) => {
   traverse(ast, {
