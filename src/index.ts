@@ -10,9 +10,6 @@ import {
   cleanMemberExpressions,
   expandSequenceExpressions,
   postGeneral,
-  removeRedefinitions,
-  removeRedudantStringVars,
-  removeRedudantVoidVar,
 } from './transformations/general';
 import {
   labelAtobGetter,
@@ -28,6 +25,11 @@ import {
 import { logicalExpressionToIfStatement } from './transformations/logic';
 import loops from './transformations/loops';
 import { bigIntToHex, booleanExpressions } from './transformations/node-format';
+import {
+  removeRedefinitions,
+  removeRedudantStringVars,
+  removeRedudantVoidVar,
+} from './transformations/removals';
 
 const inputFileName = process.argv[2];
 const outputFileName = process.argv[3] || inputFileName;
@@ -81,7 +83,7 @@ const preGeneral = (ast: File) => {
 
   ast = labelAtobPolyfill(ast);
 
-  ast = expandSequenceExpressions(ast);
+  //ast = expandSequenceExpressions(ast);
   ast = logic(ast);
   ast = expandSequenceExpressions(ast);
 
@@ -123,6 +125,8 @@ const decode = (ast: File) => {
   ast = decode(ast);
 
   ast = postGeneral(ast);
+  ast = removeRedudantVoidVar(ast);
+  ast = removeRedudantStringVars(ast);
   ast = cleanMemberExpressions(ast);
   const outputData = generateOutput(ast);
   await writeOutput(outputData);

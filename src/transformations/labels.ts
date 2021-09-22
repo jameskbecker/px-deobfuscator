@@ -171,6 +171,7 @@ export const labelResponseHandlers = (): Visitor => {
       const { properties } = init;
 
       let hasBake = false;
+
       for (let i = 0; i < properties.length; i++) {
         const prop = properties[i];
         if (
@@ -185,6 +186,7 @@ export const labelResponseHandlers = (): Visitor => {
       }
 
       if (!hasBake) return;
+      console.log('start');
       for (let i = 0; i < properties.length; i++) {
         const prop = properties[i];
         if (isObjectProperty(prop) && isIdentifier(prop.key) && isIdentifier(prop.value)) {
@@ -194,6 +196,7 @@ export const labelResponseHandlers = (): Visitor => {
 
       if (!isIdentifier(id)) return;
       path.scope.rename(id.name, prefix + 'responseHandlers');
+      path.stop();
     },
   };
 };
