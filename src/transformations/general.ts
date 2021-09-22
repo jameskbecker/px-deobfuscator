@@ -1,4 +1,3 @@
-import generate from '@babel/generator';
 import traverse, { Visitor } from '@babel/traverse';
 import {
   binaryExpression,
@@ -6,11 +5,9 @@ import {
   File,
   identifier,
   isCallExpression,
-  isExpression,
   isFunctionExpression,
   isIdentifier,
   isLiteral,
-  isReturnStatement,
   isSequenceExpression,
   isStringLiteral,
   isUnaryExpression,
