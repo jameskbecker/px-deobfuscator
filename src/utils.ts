@@ -7,7 +7,7 @@ export const b64Decode = (input: string) => {
  * @param chart 7 character chart looped over to decode string
  */
 export const chartDecode = (input: string, chart: string) => {
-  const inputAscii = Buffer.from(input, 'base64').toString();
+  const inputAscii = Buffer.from(input, 'base64').toString('ascii');
   let output = '';
   for (let i = 0; i < inputAscii.length; ++i) {
     const currentChartCode = chart.charCodeAt(i % 7);
@@ -19,7 +19,7 @@ export const chartDecode = (input: string, chart: string) => {
 };
 
 export const standardDecode = (input: string) => {
-  const inputAscii = Buffer.from(input, 'base64').toString();
+  const inputAscii = Buffer.from(input, 'base64').toString('ascii');
   let output = '';
   for (let i = 1; i < inputAscii.length; ++i) {
     const currentChartCode = inputAscii.charCodeAt(0);

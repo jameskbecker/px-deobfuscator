@@ -1,9 +1,13 @@
 import generate from '@babel/generator';
 import traverse, { Visitor } from '@babel/traverse';
 import {
+  binaryExpression,
   expressionStatement,
   File,
   identifier,
+  isCallExpression,
+  isExpression,
+  isFunctionExpression,
   isIdentifier,
   isLiteral,
   isReturnStatement,
@@ -14,6 +18,7 @@ import {
   isVariableDeclarator,
   memberExpression,
   numericLiteral,
+  returnStatement,
   stringLiteral,
   variableDeclaration,
   variableDeclarator,
@@ -38,6 +43,13 @@ export const expandSequenceExpressions = (ast: File) => {
         if (isUpdateExpression(e)) {
           skip = true;
         }
+
+        if (isCallExpression(e) && isFunctionExpression(e.callee)) {
+          e.callee.extra = {
+            parenthesized: true,
+          };
+        }
+
         return expressionStatement(e);
       });
       if (skip) return;
@@ -89,7 +101,8 @@ export const expandSequenceExpressions = (ast: File) => {
       if (!isSequenceExpression(init) || init.expressions.length < 2) return;
 
       const { expressions } = init;
-      const prevExpressions = expressions.splice(0, expressions.length - 1);
+      let prevExpressions = expressions.splice(0, expressions.length - 1);
+      prevExpressions = prevExpressions.filter((e) => !isStringLiteral(e));
       const definition = expressions[expressions.length - 1];
 
       path.replaceWithMultiple([
@@ -97,23 +110,23 @@ export const expandSequenceExpressions = (ast: File) => {
         variableDeclaration(node.kind, [variableDeclarator(id, definition)]),
       ]);
     },
+    ReturnStatement(path) {
+      const { node } = path;
+      const { argument } = node;
+
+      if (!isSequenceExpression(argument) || argument.expressions.length < 2) return;
+
+      const { expressions } = argument;
+      const prevExpressions = expressions.splice(0, expressions.length - 1);
+      const definition = expressions[expressions.length - 1];
+
+      path.replaceWithMultiple([
+        ...prevExpressions.map((e) => expressionStatement(e)),
+        returnStatement(definition),
+      ]);
+    },
   });
 
-  // traverse(ast, {
-  //   SequenceExpression(path) {
-  //     const { node } = path;
-  //     const { expressions } = node;
-  //     if (expressions.length < 2) return;
-
-  //     const prevExpressions = expressions.splice(0, expressions.length - 1);
-  //     const definition = expressions[expressions.length - 1];
-
-  //     const prevSibling = path.getStatementParent()?.getPrevSibling();
-  //     if (!prevSibling) return;
-  //     prevSibling.insertAfter(prevExpressions.map((e) => expressionStatement(e)));
-  //     //path.replaceWith(definition);
-  //   },
-  // });
   return ast;
 };
 
@@ -266,12 +279,16 @@ const cleanVarInitSequence = (): Visitor => {
     },
   };
 };
+
+/** Removes constant variables and relaces its refrences with definition
+ * @requires expandSequenceExpressions to be run
+ */
 export const removeRedudantStringVars = (ast: File) => {
   traverse(ast, {
     VariableDeclaration(path) {
       const { node } = path;
       if (
-        node.declarations.length > 0 &&
+        node.declarations.length === 1 && //make sure other declarations not removed
         isVariableDeclarator(node.declarations[0]) &&
         isLiteral(node.declarations[0].init) &&
         isIdentifier(node.declarations[0].id)
@@ -317,6 +334,15 @@ export const postGeneral = (ast: File) => {
   traverse(ast, {
     ...cleanVarInitSequence(),
     ...labelCatchParam(),
+
+    BinaryExpression(path) {
+      const { node } = path;
+      const { operator, left, right } = node;
+
+      //if some kind of literal is on (and only) the left side swich them around
+      if (isLiteral(left) && !isLiteral(right) && ['==', '===', '!=', '!=='].includes(operator))
+        path.replaceWith(binaryExpression(operator, right, left));
+    },
   });
   ast = removeRedudantVoidVar(ast);
   ast = removeRedudantStringVars(ast);

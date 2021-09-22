@@ -52,8 +52,8 @@ export const visitStringDecodeCalls = (chart: string): Visitor => {
         decodedValue = standardDecode(node.arguments[0].value);
       } else if (isB64Call(callee)) {
         decodedValue = b64Decode(node.arguments[0].value);
-      }
-      if (!decodedValue) return;
+      } else return;
+
       path.replaceWith(stringLiteral(decodedValue));
     },
   };

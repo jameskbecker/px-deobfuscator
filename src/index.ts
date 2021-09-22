@@ -70,6 +70,7 @@ const preGeneral = (ast: File) => {
   ast = removeRedefinitions(ast, 'standardDecode');
   ast = loops(ast);
 
+  ast = expandSequenceExpressions(ast);
   ast = removeRedudantStringVars(ast);
   ast = removeRedudantVoidVar(ast);
 
@@ -78,8 +79,6 @@ const preGeneral = (ast: File) => {
   ast = removeRedefinitions(ast, 'chartDecode');
 
   ast = labelAtobPolyfill(ast);
-
-  ast = cleanMemberExpressions(ast);
 
   ast = expandSequenceExpressions(ast);
   ast = logic(ast);
@@ -116,6 +115,7 @@ const decode = (ast: File) => {
   ast = decode(ast);
 
   ast = postGeneral(ast);
+  ast = cleanMemberExpressions(ast);
   const outputData = generateOutput(ast);
   await writeOutput(outputData);
 })();

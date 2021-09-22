@@ -6,7 +6,7 @@
   "author": "James Becker <48602730+jameskbecker@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src captcha.js"
+    "start": "ts-node src px_7.0.1.js"
   },
   "dependencies": {
     "@babel/generator": "^7.15.0",

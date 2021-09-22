@@ -5,10 +5,22 @@ export const booleanExpressions = (): Visitor => {
   return {
     UnaryExpression(path) {
       const { node } = path;
-      if (node.operator !== '!') return;
-      if (!isNumericLiteral(node.argument)) return;
+      const { operator, argument } = node;
+      if (operator !== '!') return;
+      if (!isNumericLiteral(argument)) return;
 
-      path.replaceWith(booleanLiteral(Boolean(node.argument.value)));
+      let value;
+      switch (argument.value) {
+        case 0:
+          value = true;
+          break;
+        case 1:
+          value = false;
+          break;
+        default:
+          return;
+      }
+      path.replaceWith(booleanLiteral(value));
     },
   };
 };
