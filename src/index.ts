@@ -9,7 +9,6 @@ import { getChartValue, visitStringDecodeCalls } from './transformations/decode'
 import {
   cleanMemberExpressions,
   expandSequenceExpressions,
-  performanceNowVisitor,
   postGeneral,
   removeRedefinitions,
   removeRedudantStringVars,
@@ -22,6 +21,7 @@ import {
   labelChartDecode,
   labelDecodeBWrapper,
   labelGetters,
+  labelPerformanceNow,
   labelResponseHandlers,
   labelStandardDecode,
 } from './transformations/labels';
@@ -89,7 +89,7 @@ const preGeneral = (ast: File) => {
   traverse(ast, labelAtobWrapper());
   traverse(ast, labelDecodeBWrapper());
   traverse(ast, {
-    ...performanceNowVisitor(),
+    ...labelPerformanceNow(),
     ...labelResponseHandlers(),
     ...labelGetters(),
   });

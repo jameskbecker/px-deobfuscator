@@ -241,28 +241,6 @@ export const removeRedefinitions = (ast: File, name: string) => {
   return ast;
 };
 
-export const performanceNowVisitor = (): Visitor => {
-  return {
-    FunctionDeclaration(path) {
-      const { node } = path;
-
-      const { id, params, body } = node;
-      if (!id || params.length !== 0) return;
-
-      if (body.body.length !== 1 || !isReturnStatement(body.body[0])) return;
-
-      const { argument } = body.body[0];
-      if (!argument) return;
-
-      const testString =
-        'window.performance && window.performance.now ? window.performance.now() : Date.now()';
-      if (generate(argument).code !== testString) return;
-
-      path.parentPath.scope.rename(id.name, prefix + 'performanceNow');
-    },
-  };
-};
-
 /** @description */
 const cleanVarInitSequence = (): Visitor => {
   return {
