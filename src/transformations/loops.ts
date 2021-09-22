@@ -48,7 +48,9 @@ const removeForLoopVoid = (): Visitor => {
 };
 
 const loops = (ast: File) => {
+  console.log('Removing For Loop Void0');
   traverse(ast, removeForLoopVoid());
+  console.log('Expanding For Loop Init Sequence');
   traverse(ast, replaceForLoopSequence());
   return ast;
 };

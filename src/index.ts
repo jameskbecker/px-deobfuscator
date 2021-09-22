@@ -59,6 +59,7 @@ const writeOutput = async (data: string) => {
 };
 
 const logic = (ast: File) => {
+  console.log('Transforming logic');
   traverse(ast, {
     ...logicalExpressionToIfStatement(),
   });
@@ -84,10 +85,15 @@ const preGeneral = (ast: File) => {
   ast = logic(ast);
   ast = expandSequenceExpressions(ast);
 
+  console.log('Labelling Atob Getter');
   traverse(ast, labelAtobGetter());
 
+  console.log('Labelling Atob Wrapper');
   traverse(ast, labelAtobWrapper());
+  console.log('Labelling Decode-B Wrapper');
   traverse(ast, labelDecodeBWrapper());
+
+  console.log('Labelling PerformanceNow, Response Handlers, Getters');
   traverse(ast, {
     ...labelPerformanceNow(),
     ...labelResponseHandlers(),
@@ -99,6 +105,7 @@ const preGeneral = (ast: File) => {
 const decode = (ast: File) => {
   chart = getChartValue(ast);
 
+  console.log('Decoding encoded strings');
   traverse(ast, visitStringDecodeCalls(chart));
   return ast;
 };
@@ -106,6 +113,7 @@ const decode = (ast: File) => {
 (async () => {
   const data = await readInput();
   let ast: any = parse(data.toString());
+  console.log('Reformatting Nodes');
   traverse(ast, {
     ...booleanExpressions(),
     ...bigIntToHex(),

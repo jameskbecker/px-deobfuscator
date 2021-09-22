@@ -26,6 +26,7 @@ import { labelCatchParam } from './labels';
 import { isVoid0 } from './types';
 
 export const expandSequenceExpressions = (ast: File) => {
+  console.log('Expanding Sequence Expressions (1/3)');
   traverse(ast, {
     ExpressionStatement(path) {
       let skip = false;
@@ -72,6 +73,7 @@ export const expandSequenceExpressions = (ast: File) => {
     // },
   });
 
+  console.log('Expanding Sequence Expressions (2/3)');
   //not sequence expressions; multiple var declarations
   traverse(ast, {
     VariableDeclaration(path) {
@@ -87,6 +89,7 @@ export const expandSequenceExpressions = (ast: File) => {
     },
   });
 
+  console.log('Expanding Sequence Expressions (3/3)');
   traverse(ast, {
     VariableDeclaration(path) {
       const { node } = path;
@@ -128,6 +131,7 @@ export const expandSequenceExpressions = (ast: File) => {
 };
 
 export const cleanMemberExpressions = (ast: File) => {
+  console.log('Tidying Member Expresssions');
   traverse(ast, {
     MemberExpression(path) {
       const { node } = path;
@@ -147,6 +151,7 @@ export const cleanMemberExpressions = (ast: File) => {
 
 /** @description Visits VariableDeclaration nodes and if its init node is void0, it removes this as it is the same as 'var x;' */
 export const removeRedudantVoidVar = (ast: File) => {
+  console.log('Removing Redundant Void0 from Variables');
   traverse(ast, {
     VariableDeclaration(path) {
       const { node } = path;
@@ -166,6 +171,7 @@ export const removeRedudantVoidVar = (ast: File) => {
 };
 
 export const removeRedefinitions = (ast: File, name: string) => {
+  console.log('Removing function redefinitions (1/2)');
   traverse(ast, {
     VariableDeclarator(path) {
       const { node } = path;
@@ -178,6 +184,7 @@ export const removeRedefinitions = (ast: File, name: string) => {
     },
   });
 
+  console.log('Removing function redefinitions (2/2)');
   traverse(ast, {
     VariableDeclarator(path) {
       const { node } = path;
@@ -214,6 +221,7 @@ const cleanVarInitSequence = (): Visitor => {
  * @requires expandSequenceExpressions to be run
  */
 export const removeRedudantStringVars = (ast: File) => {
+  console.log('Removing Redundant String Variables');
   traverse(ast, {
     VariableDeclaration(path) {
       const { node } = path;
@@ -261,6 +269,7 @@ export const removeRedudantStringVars = (ast: File) => {
 };
 
 export const postGeneral = (ast: File) => {
+  console.log('Cleaning things up...');
   traverse(ast, {
     ...cleanVarInitSequence(),
     ...labelCatchParam(),

@@ -24,6 +24,7 @@ import {
 import config, { prefix } from '../config';
 
 export const labelAtobPolyfill = (ast: File) => {
+  console.log('Labelling Atob Polyfill');
   traverse(ast, {
     VariableDeclarator(path) {
       const { node } = path;
@@ -198,6 +199,7 @@ export const labelResponseHandlers = (): Visitor => {
 };
 
 export const labelChartDecode = (ast: File) => {
+  console.log('Labelling Chart Decode Function');
   traverse(ast, {
     FunctionDeclaration(path) {
       const { node } = path;
@@ -226,6 +228,7 @@ export const labelChartDecode = (ast: File) => {
 };
 
 export const labelStandardDecode = (ast: File) => {
+  console.log('Labelling Standard Decode Function');
   traverse(ast, {
     ForStatement(path) {
       const { node } = path;

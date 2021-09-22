@@ -17,6 +17,7 @@ export const getChartValue = (ast: File): string => {
     },
   };
 
+  console.log('Finding String Decode Chart Value');
   traverse(ast, {
     FunctionDeclaration(path) {
       if (isIdentifier(path.node.id) && path.node.id.name === config.chart) {
