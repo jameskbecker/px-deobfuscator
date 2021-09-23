@@ -38,7 +38,9 @@ export const logicalExpressionToIfStatement = (): Visitor => {
           return;
 
         case 'SequenceExpression':
-          path.replaceWith(ifStatement(left, blockStatement([expressionStatement(right)])));
+          path.replaceWith(
+            ifStatement(left, blockStatement(right.expressions.map((e) => expressionStatement(e))))
+          );
           return;
       }
     },
