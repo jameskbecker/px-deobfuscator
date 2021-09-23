@@ -16,7 +16,6 @@ import {
   variableDeclarator,
   VariableDeclarator,
 } from '@babel/types';
-import { labelCatchParam } from './labels';
 
 export const expandSequenceExpressions = (ast: File) => {
   console.log('Expanding Sequence Expressions (1/2)');
@@ -65,16 +64,6 @@ export const expandSequenceExpressions = (ast: File) => {
     //   path.replaceWithMultiple(newStatements);
     // },
   });
-
-  // console.log('Expanding Sequence Expressions (2/3)');
-  // //not sequence expressions; multiple var declarations
-  // traverse(ast, {
-  //   VariableDeclaration(path) {
-  //     const { node } = path;
-  //     const { declarations } = node;
-
-  //   },
-  // });
 
   console.log('Expanding Sequence Expressions (2/2)');
   traverse(ast, {
@@ -126,7 +115,6 @@ export const cleanMemberExpressions = (ast: File) => {
     MemberExpression(path) {
       const { node } = path;
       if (
-        //(isIdentifier(node.object) || isCallExpression(node.object) || isMemberExpression(node.object)) &&
         isStringLiteral(node.property) &&
         /^[a-zA-Z_$][a-zA-Z0-9_]*?$/.test(node.property.value)
       ) {
@@ -179,5 +167,3 @@ export const postGeneral = (ast: File) => {
 
   return ast;
 };
-
-//export { preGeneral, postGeneral };
