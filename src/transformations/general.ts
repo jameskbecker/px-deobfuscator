@@ -19,7 +19,7 @@ import {
 import { labelCatchParam } from './labels';
 
 export const expandSequenceExpressions = (ast: File) => {
-  console.log('Expanding Sequence Expressions (1/3)');
+  console.log('Expanding Sequence Expressions (1/2)');
   traverse(ast, {
     ExpressionStatement(path) {
       let skip = false;
@@ -66,12 +66,22 @@ export const expandSequenceExpressions = (ast: File) => {
     // },
   });
 
-  console.log('Expanding Sequence Expressions (2/3)');
-  //not sequence expressions; multiple var declarations
+  // console.log('Expanding Sequence Expressions (2/3)');
+  // //not sequence expressions; multiple var declarations
+  // traverse(ast, {
+  //   VariableDeclaration(path) {
+  //     const { node } = path;
+  //     const { declarations } = node;
+
+  //   },
+  // });
+
+  console.log('Expanding Sequence Expressions (2/2)');
   traverse(ast, {
     VariableDeclaration(path) {
       const { node } = path;
       const { declarations } = node;
+
       if (declarations.length > 1) {
         const newDeclarations = declarations.map((d: VariableDeclarator) => {
           const x = variableDeclaration('var', [d]);
@@ -79,25 +89,15 @@ export const expandSequenceExpressions = (ast: File) => {
         });
         path.replaceWithMultiple(newDeclarations);
       }
-    },
-  });
 
-  console.log('Expanding Sequence Expressions (3/3)');
-  traverse(ast, {
-    VariableDeclaration(path) {
-      const { node } = path;
-
-      const { declarations } = node;
       if (declarations.length !== 1) return;
-
       const { init, id } = declarations[0];
       if (!isSequenceExpression(init) || init.expressions.length < 2) return;
-
       const { expressions } = init;
+
       let prevExpressions = expressions.splice(0, expressions.length - 1);
       prevExpressions = prevExpressions.filter((e) => !isStringLiteral(e));
       const definition = expressions[expressions.length - 1];
-
       path.replaceWithMultiple([
         ...prevExpressions.map((e) => expressionStatement(e)),
         variableDeclaration(node.kind, [variableDeclarator(id, definition)]),
@@ -106,13 +106,10 @@ export const expandSequenceExpressions = (ast: File) => {
     ReturnStatement(path) {
       const { node } = path;
       const { argument } = node;
-
       if (!isSequenceExpression(argument) || argument.expressions.length < 2) return;
-
       const { expressions } = argument;
       const prevExpressions = expressions.splice(0, expressions.length - 1);
       const definition = expressions[expressions.length - 1];
-
       path.replaceWithMultiple([
         ...prevExpressions.map((e) => expressionStatement(e)),
         returnStatement(definition),
@@ -159,12 +156,8 @@ const cleanVarInitSequence = (): Visitor => {
   };
 };
 
-export const postGeneral = (ast: File) => {
-  console.log('Cleaning things up...');
-  traverse(ast, {
-    ...cleanVarInitSequence(),
-    ...labelCatchParam(),
-
+const switchBinaryExpressions = (): Visitor => {
+  return {
     BinaryExpression(path) {
       const { node } = path;
       const { operator, left, right } = node;
@@ -173,6 +166,15 @@ export const postGeneral = (ast: File) => {
       if (isLiteral(left) && !isLiteral(right) && ['==', '===', '!=', '!=='].includes(operator))
         path.replaceWith(binaryExpression(operator, right, left));
     },
+  };
+};
+
+export const postGeneral = (ast: File) => {
+  console.log('Cleaning things up...');
+  traverse(ast, {
+    ...cleanVarInitSequence(),
+    //...labelCatchParam(),
+    ...switchBinaryExpressions(),
   });
 
   return ast;

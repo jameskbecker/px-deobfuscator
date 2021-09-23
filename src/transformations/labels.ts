@@ -282,6 +282,7 @@ export const labelStandardDecode = (ast: File) => {
   return ast;
 };
 
+/** @todo fix not working properly */
 export const labelCatchParam = (): Visitor => {
   return {
     CatchClause(path) {

@@ -83,7 +83,7 @@ const preGeneral = (ast: File) => {
 
   ast = labelAtobPolyfill(ast);
 
-  //ast = expandSequenceExpressions(ast);
+  ast = expandSequenceExpressions(ast);
   ast = logic(ast);
   ast = expandSequenceExpressions(ast);
 

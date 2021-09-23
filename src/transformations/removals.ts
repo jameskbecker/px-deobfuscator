@@ -19,7 +19,7 @@ export const removeRedudantStringVars = (ast: File) => {
   console.log('Removing Redundant String Variables');
   traverse(ast, {
     VariableDeclaration(path) {
-      const { node } = path;
+      const { node, scope } = path;
       if (
         node.declarations.length === 1 && //make sure other declarations not removed
         isVariableDeclarator(node.declarations[0]) &&
@@ -27,29 +27,26 @@ export const removeRedudantStringVars = (ast: File) => {
         isIdentifier(node.declarations[0].id)
       ) {
         const { init, id } = node.declarations[0];
-        if (!path.scope.getBinding(id.name)?.constant) {
-          return;
-        }
-        //if (path.scope.getBinding(id.name)?.constant) return;
+        const binding = scope.getBinding(id.name);
+        if (!binding || !binding.constant) return;
+
+        //if (scope.getBinding(id.name)?.constant) return;
         try {
           switch (init.type) {
             case 'StringLiteral':
               if (init.value.length === 0) return;
-              path.scope
-                .getBinding(id.name)
-                ?.referencePaths[0].replaceWith(stringLiteral(init.value));
+              for (let rp of binding.referencePaths) {
+                rp.replaceWith(stringLiteral(init.value));
+              }
+
               break;
             case 'NumericLiteral':
               if (!init.value) return;
-              path.scope
-                .getBinding(id.name)
-                ?.referencePaths[0].replaceWith(numericLiteral(init.value));
+              for (let rp of binding.referencePaths) {
+                rp.replaceWith(numericLiteral(init.value));
+              }
               break;
-            // case 'BooleanLiteral':
-            //   path.scope
-            //     .getBinding(id.name)
-            //     ?.referencePaths[0].replaceWith(booleanLiteral(init.value));
-            //   break;
+
             default:
               //console.log(init.type);
               return;
