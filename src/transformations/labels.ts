@@ -84,8 +84,7 @@ const isAtobWrapper = (node: FunctionDeclaration) => {
   if (!isConditionalExpression(argument)) return;
 
   const { test, consequent, alternate } = argument;
-  if (!isBinaryExpression(test) || !isCallExpression(consequent) || !isCallExpression(alternate))
-    return false;
+  if (!isBinaryExpression(test) || !isCallExpression(consequent) || !isCallExpression(alternate)) return false;
 
   const { callee } = alternate;
   if (!isIdentifier(callee)) return false;
@@ -126,12 +125,7 @@ export const labelDecodeBWrapper = (): Visitor => {
       if (!isConditionalExpression(argument)) return;
 
       const { test, consequent, alternate } = argument;
-      if (
-        !isBinaryExpression(test) ||
-        !isCallExpression(consequent) ||
-        !isCallExpression(alternate)
-      )
-        return;
+      if (!isBinaryExpression(test) || !isCallExpression(consequent) || !isCallExpression(alternate)) return;
 
       const { left, operator, right } = test;
       if (!isStringLiteral(left) || operator !== '==' || !isUnaryExpression(right)) return;
@@ -153,8 +147,7 @@ export const labelGetters = (): Visitor => {
       const { node } = path;
       const { body } = node.body;
       if (!node.id) return;
-      if (body.length !== 1 || !isReturnStatement(body[0]) || !isIdentifier(body[0].argument))
-        return;
+      if (body.length !== 1 || !isReturnStatement(body[0]) || !isIdentifier(body[0].argument)) return;
       const { name } = body[0].argument;
       path.parentPath.scope.rename(node.id.name, prefix + 'get_' + name);
     },
@@ -174,19 +167,13 @@ export const labelResponseHandlers = (): Visitor => {
 
       for (let i = 0; i < properties.length; i++) {
         const prop = properties[i];
-        if (
-          isObjectProperty(prop) &&
-          isIdentifier(prop.key) &&
-          isIdentifier(prop.value) &&
-          prop.key.name === 'bake'
-        ) {
+        if (isObjectProperty(prop) && isIdentifier(prop.key) && isIdentifier(prop.value) && prop.key.name === 'bake') {
           hasBake = true;
           break;
         }
       }
 
       if (!hasBake) return;
-      console.log('start');
       for (let i = 0; i < properties.length; i++) {
         const prop = properties[i];
         if (isObjectProperty(prop) && isIdentifier(prop.key) && isIdentifier(prop.value)) {
@@ -199,6 +186,65 @@ export const labelResponseHandlers = (): Visitor => {
       path.stop();
     },
   };
+};
+
+export const labelResponseHandlerParams = (ast: File) => {
+  const params = {
+    ___bakeHandler: ['name', 'expires', 'value', 'useDomain', 'o'],
+    ___cfeHandler: ['___a', '___b', '___c', '___d'],
+    ___sffHandler: ['___a', '___b', '___c'],
+    ___sffeHandler: ['___a'],
+    ___enHandler: ['name', 'expires', 'value', 'useDomain', 'o'],
+    ___sidHandler: ['sid'],
+    ___vidHandler: ['value', 'expires', 'useDomain'],
+    ___teHandler: ['___a', '___b', '___c', '___d', '___e', '___f'],
+    ___jscHandler: ['___a', '___b', '___c'],
+    ___preHandler: ['___a'],
+    ___keysHandler: ['___a', '___b'],
+    ___csHandler: ['value'],
+    ___clsHandler: ['value', 'expires', 'useDomain'],
+    ___stsHandler: ['startTs'],
+    ___drcHandler: ['px985Value'],
+    ___wcsHandler: ['px943Value'],
+    ___valsHandler: ['___a'],
+    ___ciHandler: ['___a', '___b', '___c', '___d'],
+    ___spiHandler: [],
+    ___cvHandler: ['___a'],
+    ___rmhdHandler: [],
+    ___rwdHandler: [],
+    ___cpHandler: ['___a', '___b', '___c', 'd'],
+    ___ctsHandler: ['___a', '___b'],
+  };
+
+  const updateParamNameVisitor = {
+    Identifier(this: any, path) {
+      const { node } = path;
+      for (let i = 0; i < this.paramNames.length; i++) {
+        if (node.name === this.paramNames[i]) {
+          if (!params.hasOwnProperty(this.type)) return;
+          node.name = params[this.type][i];
+        }
+      }
+    },
+  };
+  traverse(ast, {
+    FunctionDeclaration(path) {
+      const { node } = path;
+      const { id, params } = node;
+      if (!isIdentifier(id)) return;
+      const [nonIdentifier] = params.filter((p) => p.type !== 'Identifier');
+      if (nonIdentifier) return;
+
+      const paramNames = params.map((p: Identifier) => p.name);
+
+      params.forEach((v, i) => {
+        //@ts-ignore
+        v.name = paramNames[i];
+      });
+      path.traverse(updateParamNameVisitor, { paramNames, type: id.name });
+    },
+  });
+  return ast;
 };
 
 export const labelChartDecode = (ast: File) => {
@@ -230,30 +276,69 @@ export const labelChartDecode = (ast: File) => {
   return ast;
 };
 
+const isAtobDec = (node: VariableDeclaration) => {
+  return (
+    node.declarations.length !== 0 &&
+    isCallExpression(node.declarations[0].init) &&
+    isIdentifier(node.declarations[0].init.callee) &&
+    node.declarations[0].init.callee.name === 'atob'
+  );
+};
+
+const isCharCodeAtDec = (node: VariableDeclaration) => {
+  return (
+    node.declarations.length !== 0 &&
+    isCallExpression(node.declarations[0].init) &&
+    isMemberExpression(node.declarations[0].init.callee) &&
+    isIdentifier(node.declarations[0].init.callee.property) &&
+    node.declarations[0].init.callee.property.name === 'charCodeAt' &&
+    isNumericLiteral(node.declarations[0].init.arguments[0]) &&
+    node.declarations[0].init.arguments[0].value === 0
+  );
+};
+
 export const labelStandardDecode = (ast: File) => {
   console.log('Labelling Standard Decode Function');
   traverse(ast, {
-    ForStatement(path) {
-      const { node } = path;
-      const { init } = node;
-      if (!isVariableDeclaration(init)) return;
+    FunctionDeclaration(path) {
+      const { node, parentPath } = path;
+      const { id } = node;
+      const { body } = node.body;
 
-      let forReg = /var \w\=atob\(\w\),\w=\w\.charCodeAt\(0\)/;
-      let decString = generate(init, { compact: true }).code;
+      if (
+        !isIdentifier(id) ||
+        !isVariableDeclaration(body[0]) ||
+        !isVariableDeclaration(body[1]) ||
+        !isVariableDeclaration(body[2])
+      )
+        return;
+      if (!isAtobDec(body[0]) || !isCharCodeAtDec(body[1])) return;
 
-      if (forReg.test(decString)) {
-        let funcPath = path.getFunctionParent();
-        if (!funcPath) return;
-        const funcNode = funcPath.node;
-
-        if (!isFunctionDeclaration(funcNode)) return;
-        const { id } = funcNode;
-
-        if (!isIdentifier(id)) return;
-
-        funcPath.parentPath.scope.rename(id.name, prefix + 'standardDecode');
-      }
+      const { scope } = parentPath;
+      scope.rename(id.name, config.standard);
     },
+
+    // ForStatement(path) {
+    //   const { node } = path;
+    //   const { init } = node;
+    //   if (!isVariableDeclaration(init)) return;
+
+    //   let forReg = /var \w\=atob\(\w\),\w=\w\.charCodeAt\(0\)/;
+    //   let decString = generate(init, { compact: true }).code;
+
+    //   if (forReg.test(decString)) {
+    //     let funcPath = path.getFunctionParent();
+    //     if (!funcPath) return;
+    //     const funcNode = funcPath.node;
+
+    //     if (!isFunctionDeclaration(funcNode)) return;
+    //     const { id } = funcNode;
+
+    //     if (!isIdentifier(id)) return;
+
+    //     funcPath.parentPath.scope.rename(id.name, prefix + 'standardDecode');
+    //   }
+    //},
     // FunctionDeclaration(path) {
     //   const { node } = path;
     //   let found = false;
@@ -308,8 +393,7 @@ export const labelPerformanceNow = (): Visitor => {
       const { argument } = body.body[0];
       if (!argument) return;
 
-      const testString =
-        'window.performance && window.performance.now ? window.performance.now() : Date.now()';
+      const testString = 'window.performance && window.performance.now ? window.performance.now() : Date.now()';
       if (generate(argument).code !== testString) return;
 
       path.parentPath.scope.rename(id.name, prefix + 'performanceNow');

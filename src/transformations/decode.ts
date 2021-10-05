@@ -48,11 +48,38 @@ export const visitStringDecodeCalls = (chart: string): Visitor => {
 
       const { callee } = node;
       if (isChartEncodedString(callee)) {
-        decodedValue = chartDecode(node.arguments[0].value, chart);
+        return;
+        // decodedValue = chartDecode(node.arguments[0].value, chart);
       } else if (isStandardEncodedString(callee)) {
-        decodedValue = standardDecode(node.arguments[0].value);
+        return;
+        //decodedValue = standardDecode(node.arguments[0].value);
       } else if (isB64Call(callee)) {
         decodedValue = b64Decode(node.arguments[0].value);
+      } else return;
+
+      path.replaceWith(stringLiteral(decodedValue));
+    },
+  };
+};
+
+/** @description Visits string decode calls and replaces them with decoded string */
+export const visitStringDecodeCalls2 = (chart: string): Visitor => {
+  return {
+    CallExpression(path) {
+      const { node } = path;
+      let decodedValue = '';
+      if (
+        !isIdentifier(node.callee) ||
+        node.arguments.length !== 1 ||
+        !isStringLiteral(node.arguments[0])
+      )
+        return;
+
+      const { callee } = node;
+      if (isStandardEncodedString(callee)) {
+        decodedValue = standardDecode(node.arguments[0].value);
+      } else if (isChartEncodedString(callee)) {
+        decodedValue = chartDecode(node.arguments[0].value, chart);
       } else return;
 
       path.replaceWith(stringLiteral(decodedValue));

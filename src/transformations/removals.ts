@@ -1,15 +1,17 @@
+import generate from '@babel/generator';
 import traverse from '@babel/traverse';
 import {
   File,
   isIdentifier,
   isLiteral,
+  isParenthesizedExpression,
+  isSequenceExpression,
   isUnaryExpression,
   isVariableDeclarator,
   numericLiteral,
   stringLiteral,
   variableDeclaration,
 } from '@babel/types';
-import { prefix } from '../config';
 import { isVoid0 } from './types';
 
 /** Removes constant variables and relaces its refrences with definition
@@ -30,7 +32,6 @@ export const removeRedudantStringVars = (ast: File) => {
         const binding = scope.getBinding(id.name);
         if (!binding || !binding.constant) return;
 
-        //if (scope.getBinding(id.name)?.constant) return;
         try {
           switch (init.type) {
             case 'StringLiteral':
@@ -48,12 +49,14 @@ export const removeRedudantStringVars = (ast: File) => {
               break;
 
             default:
-              //console.log(init.type);
+              //console.log(generate(node).code);
               return;
           }
 
           path.remove();
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
       }
     },
   });
@@ -82,31 +85,48 @@ export const removeRedudantVoidVar = (ast: File) => {
 };
 
 export const removeRedefinitions = (ast: File, name: string) => {
-  console.log('Removing function redefinitions (1/2)');
+  console.log(`Removing ${name} function redefinitions (1/2)`); //renames
   traverse(ast, {
     VariableDeclarator(path) {
       const { node } = path;
-      if (isIdentifier(node.id) && isIdentifier(node.init)) {
-        const { id, init } = node;
-        if (init.name === prefix + name) {
-          path.scope.rename(id.name, prefix + name);
+      if (!isIdentifier(node.id)) return;
+
+      const { id, init } = node;
+      isIdentifier(node.id);
+      if (isIdentifier(init) && init.name === name) {
+        path.scope.rename(id.name, name);
+      }
+
+      if (isSequenceExpression(init)) {
+        const { expressions } = init;
+        const last = expressions[expressions.length - 1];
+        if (last && isIdentifier(last) && last.name === name) {
+          path.scope.rename(id.name, name);
+        }
+      }
+
+      if (isParenthesizedExpression(init) && isSequenceExpression(init.expression)) {
+        const { expressions } = init.expression;
+        const last = expressions[expressions.length - 1];
+        if (last && isIdentifier(last) && last.name === name) {
+          path.scope.rename(id.name, name);
         }
       }
     },
   });
 
-  console.log('Removing function redefinitions (2/2)');
-  traverse(ast, {
-    VariableDeclarator(path) {
-      const { node } = path;
-      if (isIdentifier(node.id) && isIdentifier(node.init)) {
-        const { id, init } = node;
-        if (id.name === init.name) {
-          path.remove();
-        }
-      }
-    },
-  });
+  // console.log(`Removing ${name} function redefinitions (2/2)`); //removes
+  // traverse(ast, {
+  //   VariableDeclarator(path) {
+  //     const { node } = path;
+  //     if (isIdentifier(node.id) && isIdentifier(node.init)) {
+  //       const { id, init } = node;
+  //       if (id.name === init.name) {
+  //         path.remove();
+  //       }
+  //     }
+  //   },
+  // });
 
   return ast;
 };

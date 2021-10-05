@@ -1,4 +1,13 @@
-import { Identifier, isNumericLiteral, UnaryExpression } from '@babel/types';
+import {
+  Expression,
+  Identifier,
+  isCallExpression,
+  isFunctionExpression,
+  isMemberExpression,
+  isNumericLiteral,
+  isUpdateExpression,
+  UnaryExpression,
+} from '@babel/types';
 import config from '../config';
 export const isVoid0 = (node: UnaryExpression) => {
   const { operator, argument } = node;
@@ -18,3 +27,10 @@ export const isStandardEncodedString = (callee: Identifier) => {
 export const isB64Call = (callee: Identifier) => {
   return callee.name === config.atob.wrapper;
 };
+
+export const isFunctionA = (e: Expression) => isCallExpression(e) && isFunctionExpression(e.callee);
+export const isFunctionB = (e: Expression) =>
+  isUpdateExpression(e) &&
+  isMemberExpression(e.argument) &&
+  isCallExpression(e.argument.object) &&
+  isFunctionExpression(e.argument.object.callee);
