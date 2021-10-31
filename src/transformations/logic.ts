@@ -23,9 +23,10 @@ export const logicalExpressionToIfStatement = (): Visitor => {
       const { node } = path;
       const { expression } = node;
       if (!isLogicalExpression(expression)) return;
-
       const { operator, left, right } = expression;
       if (operator !== '&&') return;
+      
+      
       switch (right.type) {
         case 'CallExpression':
           const { callee } = right;
@@ -43,12 +44,13 @@ export const logicalExpressionToIfStatement = (): Visitor => {
           return;
 
         case 'ParenthesizedExpression':
-          path.replaceWith(ifStatement(left, blockStatement([expressionStatement(right.expression)])));
+          path.replaceWith(ifStatement(left, blockStatement([expressionStatement({...right.expression})])));
           return;
         case 'ConditionalExpression':
           path.replaceWith(ifStatement(left, blockStatement([expressionStatement(right)])));
           return;
 
+        default: console.log(right.type)
         // case 'SequenceExpression':
         //   path.replaceWith(ifStatement(left, blockStatement(right.expressions.map((e) => expressionStatement(e)))));
         //   return;

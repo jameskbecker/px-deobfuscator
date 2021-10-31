@@ -95,6 +95,7 @@ export const removeRedefinitions = (ast: File, name: string) => {
       isIdentifier(node.id);
       if (isIdentifier(init) && init.name === name) {
         path.scope.rename(id.name, name);
+        path.remove();
       }
 
       if (isSequenceExpression(init)) {
@@ -102,6 +103,7 @@ export const removeRedefinitions = (ast: File, name: string) => {
         const last = expressions[expressions.length - 1];
         if (last && isIdentifier(last) && last.name === name) {
           path.scope.rename(id.name, name);
+          path.remove();
         }
       }
 
@@ -110,6 +112,7 @@ export const removeRedefinitions = (ast: File, name: string) => {
         const last = expressions[expressions.length - 1];
         if (last && isIdentifier(last) && last.name === name) {
           path.scope.rename(id.name, name);
+          path.remove();
         }
       }
     },
